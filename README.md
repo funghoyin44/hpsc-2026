@@ -1,6 +1,6 @@
 # hpc_lecture
 
-Student ID:
+Student ID: 26M30860 (FUNG, Ho Yin)
 
 |          | Topic                                | Sample code               |
 | -------- | ------------------------------------ | ------------------------- |
