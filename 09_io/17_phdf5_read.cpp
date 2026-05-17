@@ -21,15 +21,17 @@ int main (int argc, char** argv) {
   hsize_t N[ndim];
   H5Sget_simple_extent_dims(globalspace, N, NULL);
   hsize_t NX = N[0], NY = N[1];
-  hsize_t Nlocal[2] = {NX/dim[0], NY/dim[1]};
+  hsize_t Nlocal[2] = {(NX/dim[0]) / 2, (NY/dim[1]) / 2};
   hsize_t offset[2] = {mpirank / dim[0], mpirank % dim[0]};
   for(int i=0; i<2; i++) offset[i] *= Nlocal[i];
-  hsize_t count[2] = {1,1};
-  hsize_t stride[2] = {1,1};
-  hid_t localspace = H5Screate_simple(2, Nlocal, NULL);
+  //printf("OFFSET=%d %d\n", offset[0], offset[1]);
+  hsize_t count[2] = {2,2};
+  hsize_t stride[2] = {Nlocal[0] * 2, Nlocal[1] * 2};
+  hsize_t local_block_size[2] = {Nlocal[0] * 2, Nlocal[1] * 2};
+  hid_t localspace = H5Screate_simple(2, local_block_size, NULL);
   H5Sselect_hyperslab(globalspace, H5S_SELECT_SET, offset, stride, count, Nlocal);
   H5Pclose(plist);
-  vector<int> buffer(Nlocal[0]*Nlocal[1]);
+  vector<int> buffer(Nlocal[0]*Nlocal[1] * 4);
   plist = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
   auto tic = chrono::steady_clock::now();
@@ -42,7 +44,7 @@ int main (int argc, char** argv) {
   H5Pclose(plist);
   double time = chrono::duration<double>(toc - tic).count();
   int sum = 0;
-  for (int i=0; i<Nlocal[0]*Nlocal[1]; i++)
+  for (int i=0; i<Nlocal[0]*Nlocal[1]*4; i++)
     sum += buffer[i];
   printf("sum=%d\n",sum);
   printf("N=%d: %lf s (%lf GB/s)\n",NX*NY,time,4*NX*NY/time/1e9);
